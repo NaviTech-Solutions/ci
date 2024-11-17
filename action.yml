@@ -28,6 +28,15 @@ inputs:                                    # 定義使用者可傳入的參數�
 runs:
   using: "composite"
   steps:
+    - name: Set executable permission for entrypoint
+      run: chmod +x ./entrypoint.sh
+
+    - name: Print working directory
+      run: pwd
+
+    - name: List files in the current directory
+      run: ls -al
+
     - name: Run Shell Script
       run: ./entrypoint.sh ${{ inputs.message }} ${{ inputs.name }}
       shell: bash
