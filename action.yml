@@ -1,45 +1,62 @@
-name: "My Custom Action"                   # Action 的名稱，顯示在 GitHub Actions UI 中。
-description: "這是自製的 GitHub Action"     # Action 的描述，說明用途。
-author: "LanDi"                           # 作者名稱，方便追溯和聯絡。
+name: "Build, Test, and Push to ECR"
+description: "A custom GitHub Action for building, testing, and pushing Docker images to Amazon ECR"
+author: "NaviTech Solutions"
 
-inputs:                                    # 定義使用者可傳入的參數。
-  message:                                 # 第一個輸入參數名稱為 `message`。
-    description: "要顯示的訊息"             # 說明這個輸入參數的用途。
-    required: true                         # 設定這個參數為必填。
-    default: "Hello, World!"               # 設定參數的預設值。
-
-  name:                                    # 第二個輸入參數名稱為 `name`。
-    description: "使用者名稱"               # 說明這個參數的用途。
-    required: false                        # 設定這個參數為可選。
-    default: "User"                        # 設定參數的預設值為 `"User"`。
-
-# runs:                                      # 定義 Action 的執行方式。
-#   using: "docker"                          # 指定使用 Docker 作為執行環境。
-#   image: "Dockerfile"                      # 使用當前目錄下的 Dockerfile 來構建 Docker 容器。
-#   args:                                    # 傳遞給 Docker 容器的參數。
-#     - ${{ inputs.message }}                # 使用 `${{ inputs.<參數名> }}` 語法來引用輸入參數 `message`。
-#     - ${{ inputs.name }}                   # 使用 `${{ inputs.<參數名> }}` 語法來引用輸入參數 `name`。
-
-# branding:                                  # 自訂 GitHub Action 的外觀設定。
-#   icon: "message-circle"                   # 設定在 Marketplace 上顯示的圖示。
-#   color: "blue"                            # 設定在 Marketplace 上顯示的顏色。
-
+inputs:
+  aws-region:
+    description: "AWS region"
+    required: true
+    default: "ap-east-1"
+  branch-name:
+    description: "Branch name"
+    required: true
+  aws-access-key-id:
+    description: "AWS Access Key ID"
+    required: true
+    default: ""
+  aws-secret-access-key:
+    description: "AWS Secret Access Key"
+    required: true
+    default: ""
 
 runs:
   using: "composite"
   steps:
-    - name: Set executable permission for entrypoint
-      run: chmod +x ./entrypoint.sh
+    - name: Setup environment variables
+      run: ./setup.sh ${{ inputs.branch-name }}
       shell: bash
 
-    - name: Print working directory
-      run: pwd
-      shell: bash
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        aws-access-key-id: ${{ inputs.aws-access-key-id }}
+        aws-secret-access-key: ${{ inputs.aws-secret-access-key }}
+        aws-region: ${{ inputs.aws-region }}
 
-    - name: List files in the current directory
-      run: ls -al
-      shell: bash
+    - name: Create ECR repository
+      uses: int128/create-ecr-repository-action@v1.325.0
+      with:
+        repository: ${{ env.ECR_REPOSITORY }}
+        public: false
 
-    - name: Run Shell Script
-      run: ./entrypoint.sh ${{ inputs.message }} ${{ inputs.name }}
-      shell: bash
+    - name: Login to Amazon ECR
+      uses: aws-actions/amazon-ecr-login@v2
+      with:
+        region: ${{ inputs.aws-region }}
+
+    - name: Setup Docker Buildx
+      uses: docker/setup-buildx-action@v3.7.1
+      with:
+        driver: docker-container
+        driver-opts: network=host
+
+    - name: Build and Push Docker Image
+      uses: docker/build-push-action@v6.9.0
+      with:
+        context: .
+        file: .gitea/workflows/Dockerfile
+        platforms: linux/amd64
+        push: true
+        tags: |
+          ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}
+          ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:latest
