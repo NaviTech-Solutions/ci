@@ -28,5 +28,6 @@ inputs:                                    # 定義使用者可傳入的參數�
 runs:
   using: "composite"
   steps:
-    - run: bash ./ci/entrypoint.sh ${{ inputs.message }} ${{ inputs.name }}
+    - name: Run Shell Script
+      run: ./entrypoint.sh ${{ inputs.message }} ${{ inputs.name }}
       shell: bash
