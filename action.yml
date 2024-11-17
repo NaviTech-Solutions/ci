@@ -30,12 +30,15 @@ runs:
   steps:
     - name: Set executable permission for entrypoint
       run: chmod +x ./entrypoint.sh
+      shell: bash
 
     - name: Print working directory
       run: pwd
+      shell: bash
 
     - name: List files in the current directory
       run: ls -al
+      shell: bash
 
     - name: Run Shell Script
       run: ./entrypoint.sh ${{ inputs.message }} ${{ inputs.name }}
