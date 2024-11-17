@@ -13,13 +13,20 @@ inputs:                                    # 定義使用者可傳入的參數�
     required: false                        # 設定這個參數為可選。
     default: "User"                        # 設定參數的預設值為 `"User"`。
 
-runs:                                      # 定義 Action 的執行方式。
-  using: "docker"                          # 指定使用 Docker 作為執行環境。
-  image: "Dockerfile"                      # 使用當前目錄下的 Dockerfile 來構建 Docker 容器。
-  args:                                    # 傳遞給 Docker 容器的參數。
-    - ${{ inputs.message }}                # 使用 `${{ inputs.<參數名> }}` 語法來引用輸入參數 `message`。
-    - ${{ inputs.name }}                   # 使用 `${{ inputs.<參數名> }}` 語法來引用輸入參數 `name`。
+# runs:                                      # 定義 Action 的執行方式。
+#   using: "docker"                          # 指定使用 Docker 作為執行環境。
+#   image: "Dockerfile"                      # 使用當前目錄下的 Dockerfile 來構建 Docker 容器。
+#   args:                                    # 傳遞給 Docker 容器的參數。
+#     - ${{ inputs.message }}                # 使用 `${{ inputs.<參數名> }}` 語法來引用輸入參數 `message`。
+#     - ${{ inputs.name }}                   # 使用 `${{ inputs.<參數名> }}` 語法來引用輸入參數 `name`。
 
-branding:                                  # 自訂 GitHub Action 的外觀設定。
-  icon: "message-circle"                   # 設定在 Marketplace 上顯示的圖示。
-  color: "blue"                            # 設定在 Marketplace 上顯示的顏色。
+# branding:                                  # 自訂 GitHub Action 的外觀設定。
+#   icon: "message-circle"                   # 設定在 Marketplace 上顯示的圖示。
+#   color: "blue"                            # 設定在 Marketplace 上顯示的顏色。
+
+
+runs:
+  using: "composite"
+  steps:
+    - run: ./entrypoint.sh ${{ inputs.message }} ${{ inputs.name }}
+      shell: bash
